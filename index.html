@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+
+<html lang="de" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<meta name="theme-color" content="#06D6A0">
+<title>Habit Tracker – SimplovaStudio</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── CSS VARIABLES ── */
+:root {
+  --accent: #06D6A0;
+  --accent-rgb: 6,214,160;
+  --accent-dark: #04A87D;
+  --accent-light: #E0FBF4;
+  --bg: #F7F8FC;
+  --surf: #FFFFFF;
+  --surf2: #F0F2F8;
+  --border: #E4E8F0;
+  --text: #1A1A2E;
+  --text2: #5A6478;
+  --text3: #9AA3B2;
+  --red: #EF476F;
+  --yellow: #FFD166;
+  --navy: #1A1A2E;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --nav-h: 64px;
+  --topbar-h: 56px;
+}
+[data-theme="dark"] {
+  --bg: #0D0F18;
+  --surf: #161924;
+  --surf2: #1E2130;
+  --border: #252A3A;
+  --text: #EEF0F8;
+  --text2: #7A85A0;
+  --text3: #404760;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; font-family: var(–font); background: var(–bg); color: var(–text); }
+button { font-family: var(–font); cursor: pointer; border: none; background: none; }
+input { font-family: var(–font); }
+
+/* ── ONBOARDING ── */
+#onboarding {
+position: fixed; inset: 0; background: var(–surf); z-index: 500;
+display: flex; align-items: center; justify-content: center; padding: 2rem;
+}
+#onboarding.hidden { display: none; }
+.ob-wrap { width: 100%; max-width: 400px; animation: fadeUp .35s ease; }
+.ob-logo {
+width: 40px; height: 40px; border-radius: 10px;
+background: var(–accent); display: flex; align-items: center; justify-content: center;
+font-size: 20px; font-weight: 700; color: #fff; margin: 0 auto 2rem;
+}
+.ob-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 2rem; }
+.ob-dot { width: 6px; height: 6px; border-radius: 3px; background: var(–border); transition: .3s; }
+.ob-dot.active { width: 20px; background: var(–accent); }
+.ob-dot.done { background: var(–accent); opacity: .5; }
+.ob-title { font-size: 26px; font-weight: 600; margin-bottom: .5rem; }
+.ob-sub { font-size: 15px; color: var(–text2); margin-bottom: 2rem; line-height: 1.6; }
+.ob-input {
+width: 100%; padding: 14px 16px; border: 1.5px solid var(–border);
+border-radius: var(–radius-sm); font-size: 16px; background: var(–surf2);
+color: var(–text); outline: none; transition: border .2s; margin-bottom: 1.25rem;
+}
+.ob-input:focus { border-color: var(–accent); }
+.ob-label { font-size: 12px; font-weight: 500; color: var(–text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .6rem; display: block; }
+.ob-colors { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+.ob-color {
+width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+border: 3px solid transparent; transition: .2s;
+display: flex; align-items: center; justify-content: center;
+font-size: 16px; color: transparent; font-weight: 700;
+}
+.ob-color.sel { border-color: var(–text); color: #fff; transform: scale(1.1); }
+.ob-freqs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.ob-freq {
+padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(–border);
+background: var(–surf2); color: var(–text2); font-size: 13px; cursor: pointer; transition: .2s;
+}
+.ob-freq.sel { background: var(–accent); border-color: var(–accent); color: #fff; font-weight: 500; }
+.ob-btn {
+width: 100%; padding: 15px; background: var(–accent); color: #fff;
+border-radius: var(–radius-sm); font-size: 15px; font-weight: 600;
+transition: .15s; letter-spacing: .01em;
+}
+.ob-btn:hover { opacity: .9; }
+.ob-btn:active { transform: scale(.98); }
+.ob-screen { display: none; }
+.ob-screen.active { display: block; }
+
+/* ── APP SHELL ── */
+#app {
+display: none; flex-direction: column; height: 100vh; overflow: hidden;
+}
+#app.visible { display: flex; }
+
+/* ── TOPBAR ── */
+.topbar {
+height: var(–topbar-h); background: var(–surf); border-bottom: 1px solid var(–border);
+display: flex; align-items: center; justify-content: space-between;
+padding: 0 1.25rem; flex-shrink: 0; position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.logo-mark {
+width: 28px; height: 28px; border-radius: 7px; background: var(–accent);
+display: flex; align-items: center; justify-content: center;
+font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.topbar-greeting { font-size: 13px; color: var(–text2); }
+.topbar-name { font-size: 15px; font-weight: 600; }
+.topbar-right { display: flex; gap: 6px; }
+.tbtn {
+height: 34px; border-radius: 8px; border: 1px solid var(–border);
+background: var(–surf2); color: var(–text2); transition: .15s;
+display: flex; align-items: center; justify-content: center;
+}
+.tbtn:hover { background: var(–border); }
+.tbtn.icon { width: 34px; font-size: 15px; }
+.tbtn.lang { padding: 0 10px; font-family: var(–mono); font-size: 11px; font-weight: 500; }
+
+/* ── APP BODY ── */
+.app-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+/* ── SIDEBAR (desktop only) ── */
+.sidebar {
+display: none; width: 200px; flex-shrink: 0;
+background: var(–surf); border-right: 1px solid var(–border);
+flex-direction: column; padding: 1.25rem .75rem; gap: 2px;
+}
+.sidebar-item {
+display: flex; align-items: center; gap: 10px;
+padding: .7rem 1rem; border-radius: var(–radius-sm);
+color: var(–text3); font-size: 13px; font-weight: 500;
+cursor: pointer; transition: .15s; border: none; background: none; width: 100%;
+}
+.sidebar-item:hover { background: var(–surf2); color: var(–text); }
+.sidebar-item.active { color: var(–accent); background: rgba(var(–accent-rgb),.1); }
+.sidebar-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* ── CONTENT ── */
+.content { flex: 1; overflow-y: auto; background: var(–bg); }
+.pages { }
+.page {
+display: none; padding: 1.25rem;
+padding-bottom: calc(var(–nav-h) + 1rem);
+max-width: 680px; margin: 0 auto;
+}
+.page.active { display: block; animation: fadeUp .2s ease; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+height: var(–nav-h); background: var(–surf); border-top: 1px solid var(–border);
+display: flex; align-items: center; justify-content: space-around;
+flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+flex: 1; display: flex; flex-direction: column; align-items: center;
+justify-content: center; gap: 3px; color: var(–text3);
+font-size: 10px; font-family: var(–mono); font-weight: 500;
+text-transform: uppercase; letter-spacing: .04em; cursor: pointer;
+padding: .5rem; border: none; background: none; transition: .15s;
+}
+.nav-item.active { color: var(–accent); }
+.nav-icon { width: 20px; height: 20px; }
+
+/* ── DESKTOP OVERRIDES ── */
+@media(min-width: 1024px) {
+.sidebar { display: flex; }
+.bottom-nav { display: none; }
+.page { padding: 2rem; padding-bottom: 2rem; max-width: 760px; }
+}
+@media(min-width: 641px) and (max-width: 1023px) {
+.page { max-width: 660px; }
+}
+
+/* ── CARDS & LAYOUT ── */
+.card { background: var(–surf); border: 1px solid var(–border); border-radius: var(–radius); }
+.section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
+.section-title { font-size: 14px; font-weight: 600; }
+.section-action { font-size: 13px; color: var(–accent); font-weight: 500; cursor: pointer; }
+.mb { margin-bottom: 1.25rem; }
+
+/* ── QUOTE CARD ── */
+.quote-card {
+background: var(–accent); border-radius: var(–radius);
+padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+}
+.quote-text { font-size: 14px; color: #fff; line-height: 1.6; font-style: italic; }
+.quote-author { font-size: 11px; color: rgba(255,255,255,.7); margin-top: .4rem; font-family: var(–mono); }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+@media(min-width: 641px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+.kpi { padding: .9rem 1rem; }
+.kpi-label { font-size: 11px; color: var(–text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .3rem; }
+.kpi-value { font-family: var(–mono); font-size: 24px; font-weight: 500; line-height: 1; }
+.kpi-value.accent { color: var(–accent); }
+.kpi-sub { font-size: 11px; color: var(–text3); margin-top: .25rem; }
+
+/* ── WEEK OVERVIEW ── */
+.week-card { padding: 1rem; margin-bottom: 1.25rem; }
+.week-days { display: flex; justify-content: space-between; gap: 4px; margin-top: .75rem; }
+.wday { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.wday-label { font-size: 10px; color: var(–text3); font-family: var(–mono); text-transform: uppercase; }
+.wday-dot {
+width: 100%; max-width: 38px; aspect-ratio: 1; border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-size: 11px; font-weight: 500; transition: .2s;
+}
+.wday-dot.full { background: var(–accent); color: #fff; }
+.wday-dot.part { background: rgba(var(–accent-rgb),.25); color: var(–text); }
+.wday-dot.empty { background: var(–surf2); color: var(–text3); }
+.wday-dot.future { background: var(–surf2); color: var(–text3); opacity: .5; }
+.wday-dot.today { box-shadow: 0 0 0 2px var(–accent), 0 0 0 4px var(–surf); }
+
+/* ── HABIT LIST ── */
+.habits-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
+.habit-row {
+padding: .9rem 1rem; display: flex; align-items: center; gap: .85rem;
+transition: background .2s, border-color .2s;
+}
+.habit-row.done {
+background: rgba(var(–accent-rgb),.05);
+border-color: rgba(var(–accent-rgb),.3);
+}
+.hcheck {
+width: 30px; height: 30px; border-radius: 50%;
+border: 2px solid var(–border); flex-shrink: 0;
+display: flex; align-items: center; justify-content: center;
+cursor: pointer; transition: .2s; font-size: 15px;
+}
+.hcheck.checked { border-color: transparent; color: #fff; }
+.hinfo { flex: 1; min-width: 0; }
+.hname { font-size: 14px; font-weight: 500; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hmeta { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.hstreak { font-family: var(–mono); font-size: 11px; color: var(–text3); }
+.hfreq { font-size: 11px; color: var(–text3); }
+.hprog-wrap { height: 3px; background: var(–surf2); border-radius: 2px; overflow: hidden; }
+.hprog { height: 100%; border-radius: 2px; transition: width .6s ease; }
+.hdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(–text3); }
+.empty-icon { font-size: 40px; margin-bottom: .75rem; opacity: .5; }
+.empty-text { font-size: 14px; line-height: 1.6; }
+
+/* ── HEATMAP ── */
+.hm-card { padding: 1rem; margin-bottom: 1.25rem; overflow: hidden; }
+.hm-month-label { font-size: 12px; font-weight: 500; color: var(–text2); margin-bottom: .75rem; }
+.hm-grid { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+.hm-col { display: flex; flex-direction: column; gap: 3px; }
+.hm-cell { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.hm-cell.l0 { background: var(–surf2); }
+.hm-cell.l1 { background: rgba(var(–accent-rgb),.25); }
+.hm-cell.l2 { background: rgba(var(–accent-rgb),.5); }
+.hm-cell.l3 { background: rgba(var(–accent-rgb),.75); }
+.hm-cell.l4 { background: var(–accent); }
+.hm-legend { display: flex; align-items: center; gap: 6px; margin-top: .6rem; }
+.hm-legend-label { font-size: 10px; color: var(–text3); }
+.hm-legend-cells { display: flex; gap: 3px; }
+
+/* ── CHART ── */
+.chart-card { padding: 1rem; margin-bottom: 1.25rem; }
+.chart-title { font-size: 13px; font-weight: 500; color: var(–text2); margin-bottom: .75rem; }
+.chart-wrap { position: relative; height: 200px; }
+
+/* ── BADGES ── */
+.badges-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 1.25rem; }
+@media(min-width:1024px) { .badges-grid { grid-template-columns: repeat(6,1fr); } }
+.badge-item { padding: .75rem .5rem; text-align: center; border-radius: var(–radius-sm); }
+.badge-icon { font-size: 26px; margin-bottom: .3rem; display: block; filter: grayscale(1); opacity: .35; transition: .3s; }
+.badge-icon.earned { filter: none; opacity: 1; box-shadow: 0 0 0 3px rgba(var(–accent-rgb),.25); border-radius: 50%; }
+.badge-label { font-size: 10px; color: var(–text3); font-family: var(–mono); }
+
+/* ── MANAGE ── */
+.add-habit-btn {
+width: 100%; padding: 14px; border: 1.5px dashed var(–border);
+border-radius: var(–radius); background: transparent; color: var(–text2);
+font-size: 14px; cursor: pointer; transition: .2s; margin-bottom: 1rem;
+display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.add-habit-btn:hover { border-color: var(–accent); color: var(–accent); background: rgba(var(–accent-rgb),.04); }
+.manage-row {
+padding: .9rem 1rem; display: flex; align-items: center; gap: .75rem;
+margin-bottom: 8px;
+}
+.manage-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.manage-info { flex: 1; min-width: 0; }
+.manage-name { font-size: 14px; font-weight: 500; }
+.manage-sub { font-size: 11px; color: var(–text3); margin-top: 2px; }
+.manage-actions { display: flex; gap: 6px; }
+.manage-btn {
+width: 30px; height: 30px; border-radius: 8px;
+border: 1px solid var(–border); background: var(–surf2);
+display: flex; align-items: center; justify-content: center;
+font-size: 13px; transition: .15s; color: var(–text2); cursor: pointer;
+}
+.manage-btn:hover { background: var(–border); }
+.manage-btn.del:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+/* ── SETTINGS ── */
+.settings-section { border-radius: var(–radius); overflow: hidden; margin-bottom: 1.25rem; }
+.settings-row {
+display: flex; align-items: center; justify-content: space-between;
+padding: 1rem 1.25rem; border-bottom: 1px solid var(–border);
+background: var(–surf);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row.clickable { cursor: pointer; }
+.settings-row.clickable:hover { background: var(–surf2); }
+.settings-label { font-size: 14px; font-weight: 500; }
+.settings-sub { font-size: 12px; color: var(–text3); margin-top: 2px; }
+.settings-danger { color: var(–red); }
+.toggle-btn {
+width: 44px; height: 24px; border-radius: 12px; background: var(–surf2);
+border: 1px solid var(–border); cursor: pointer; position: relative; transition: .2s; flex-shrink: 0;
+}
+.toggle-btn.on { background: var(–accent); border-color: var(–accent); }
+.toggle-btn::after {
+content: ‘’; position: absolute; width: 18px; height: 18px;
+border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: .2s;
+}
+.toggle-btn.on::after { left: 22px; }
+.accent-dots { display: flex; gap: 8px; }
+.accent-dot {
+width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+border: 2px solid transparent; transition: .2s;
+display: flex; align-items: center; justify-content: center;
+font-size: 12px; color: transparent;
+}
+.accent-dot.sel { border-color: var(–text); color: #fff; }
+.footer-text { text-align: center; margin-top: 2rem; color: var(–text3); font-size: 11px; font-family: var(–mono); line-height: 1.8; }
+
+/* ── MODALS ── */
+.modal-overlay {
+display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
+z-index: 400; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+@media(min-width:641px) { .modal-overlay { align-items: center; } }
+.modal-panel {
+background: var(–surf); width: 100%; max-height: 90vh; overflow-y: auto;
+border-radius: 20px 20px 0 0; padding: 1.5rem; animation: slideUp .25s ease;
+}
+@media(min-width:641px) {
+.modal-panel { border-radius: var(–radius); max-width: 460px; animation: fadeIn .2s ease; }
+}
+.modal-handle { width: 36px; height: 4px; background: var(–border); border-radius: 2px; margin: 0 auto 1.25rem; }
+@media(min-width:641px) { .modal-handle { display: none; } }
+.modal-title { font-size: 18px; font-weight: 600; margin-bottom: 1.25rem; }
+.modal-input {
+width: 100%; padding: 13px 16px; border: 1.5px solid var(–border);
+border-radius: var(–radius-sm); font-size: 15px; background: var(–surf2);
+color: var(–text); outline: none; transition: border .2s; margin-bottom: 1rem;
+}
+.modal-input:focus { border-color: var(–accent); }
+.modal-label { font-size: 12px; font-weight: 500; color: var(–text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .6rem; display: block; }
+.modal-actions { display: flex; gap: 8px; margin-top: .75rem; }
+.modal-btn {
+flex: 1; padding: 13px; border-radius: var(–radius-sm);
+font-size: 14px; font-weight: 600; transition: .15s; cursor: pointer; border: none;
+}
+.modal-btn.primary { background: var(–accent); color: #fff; }
+.modal-btn.primary:hover { opacity: .9; }
+.modal-btn.secondary { background: var(–surf2); color: var(–text); }
+.modal-btn.secondary:hover { background: var(–border); }
+.modal-btn.danger { background: var(–red); color: #fff; }
+
+/* ── CONFETTI ── */
+.confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+.conf-piece { position: absolute; top: 0; animation: confFall linear forwards; }
+@keyframes confFall {
+0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+from { opacity: 0; transform: translateY(8px); }
+to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+from { transform: translateY(100%); }
+to { transform: translateY(0); }
+}
+@keyframes fadeIn {
+from { opacity: 0; transform: scale(.97); }
+to { opacity: 1; transform: scale(1); }
+}
+</style>
+
+</head>
+<body>
+
+<!-- ── ONBOARDING ── -->
+
+<div id="onboarding">
+  <div class="ob-wrap">
+    <div class="ob-logo">S</div>
+    <div class="ob-dots">
+      <div class="ob-dot active" id="dot-1"></div>
+      <div class="ob-dot" id="dot-2"></div>
+    </div>
+
+```
+<!-- Screen 1 -->
+<div class="ob-screen active" id="ob-s1">
+  <div class="ob-title" data-de="Willkommen 👋" data-en="Welcome 👋">Willkommen 👋</div>
+  <div class="ob-sub" data-de="Wie heißt du?" data-en="What's your name?">Wie heißt du?</div>
+  <input class="ob-input" id="ob-name" type="text" maxlength="30"
+    placeholder="Dein Name" data-de-placeholder="Dein Name" data-en-placeholder="Your name">
+  <button class="ob-btn" onclick="obNext()" data-de="Weiter →" data-en="Next →">Weiter →</button>
+</div>
+
+<!-- Screen 2 -->
+<div class="ob-screen" id="ob-s2">
+  <div class="ob-title" data-de="Deine erste Gewohnheit" data-en="Your first habit">Deine erste Gewohnheit</div>
+  <div class="ob-sub" data-de="Womit möchtest du starten?" data-en="What do you want to start with?">Womit möchtest du starten?</div>
+  <input class="ob-input" id="ob-habit" type="text" maxlength="40"
+    placeholder="z.B. Täglich lesen" data-de-placeholder="z.B. Täglich lesen" data-en-placeholder="e.g. Read daily">
+  <label class="ob-label" data-de="Farbe wählen" data-en="Choose color">Farbe wählen</label>
+  <div class="ob-colors" id="ob-color-picker"></div>
+  <label class="ob-label" data-de="Häufigkeit" data-en="Frequency">Häufigkeit</label>
+  <div class="ob-freqs" id="ob-freq-picker"></div>
+  <button class="ob-btn" onclick="obFinish()" data-de="Loslegen →" data-en="Let's go →">Loslegen →</button>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ── APP ── -->
+
+<div id="app">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark">S</div>
+      <div>
+        <div class="topbar-greeting" id="topbar-greeting"></div>
+        <div class="topbar-name" id="topbar-name"></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="tbtn lang" onclick="toggleLang()" id="lang-btn">DE</button>
+      <button class="tbtn icon" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- Sidebar (desktop) -->
+    <nav class="sidebar">
+      <button class="sidebar-item active" onclick="navTo('today')" id="sb-today">
+        <svg class="sidebar-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M10 2L3 7v11h5v-5h4v5h5V7L10 2z"/>
+        </svg>
+        <span data-de="Heute" data-en="Today">Heute</span>
+      </button>
+      <button class="sidebar-item" onclick="navTo('stats')" id="sb-stats">
+        <svg class="sidebar-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+          <rect x="3" y="10" width="3" height="7" rx="1"/><rect x="8.5" y="6" width="3" height="11" rx="1"/><rect x="14" y="3" width="3" height="14" rx="1"/>
+        </svg>
+        <span data-de="Statistik" data-en="Stats">Statistik</span>
+      </button>
+      <button class="sidebar-item" onclick="navTo('manage')" id="sb-manage">
+        <svg class="sidebar-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M4 6h12M4 10h12M4 14h8"/>
+        </svg>
+        <span data-de="Habits" data-en="Habits">Habits</span>
+      </button>
+      <button class="sidebar-item" onclick="navTo('settings')" id="sb-settings">
+        <svg class="sidebar-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/>
+        </svg>
+        <span data-de="Einstellungen" data-en="Settings">Einstellungen</span>
+      </button>
+    </nav>
+
+```
+<!-- Content -->
+<main class="content">
+  <div class="pages">
+
+    <!-- PAGE: TODAY -->
+    <section id="page-today" class="page active">
+      <div class="quote-card mb">
+        <div class="quote-text" id="quote-text"></div>
+        <div class="quote-author" id="quote-author"></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi card">
+          <div class="kpi-label" data-de="Heute erledigt" data-en="Done today">Heute erledigt</div>
+          <div class="kpi-value accent" id="kpi-done">0</div>
+          <div class="kpi-sub" id="kpi-done-sub">von 0 Habits</div>
+        </div>
+        <div class="kpi card">
+          <div class="kpi-label" data-de="Beste Streak" data-en="Best streak">Beste Streak</div>
+          <div class="kpi-value" id="kpi-best">0</div>
+          <div class="kpi-sub" data-de="Tage" data-en="days">Tage</div>
+        </div>
+        <div class="kpi card">
+          <div class="kpi-label" data-de="Erfolgsquote" data-en="Success rate">Erfolgsquote</div>
+          <div class="kpi-value accent" id="kpi-rate">0%</div>
+          <div class="kpi-sub" data-de="diese Woche" data-en="this week">diese Woche</div>
+        </div>
+        <div class="kpi card">
+          <div class="kpi-label" data-de="Aktive Habits" data-en="Active habits">Aktive Habits</div>
+          <div class="kpi-value" id="kpi-count">0</div>
+          <div class="kpi-sub" data-de="von 15 max." data-en="of 15 max">von 15 max.</div>
+        </div>
+      </div>
+      <div class="section-hd">
+        <span class="section-title" data-de="Wochenübersicht" data-en="Week overview">Wochenübersicht</span>
+      </div>
+      <div class="card week-card mb">
+        <div class="week-days" id="week-days"></div>
+      </div>
+      <div class="section-hd">
+        <span class="section-title" data-de="Heutige Habits" data-en="Today's Habits">Heutige Habits</span>
+        <span class="section-action" onclick="navTo('manage')" data-de="+ Hinzufügen" data-en="+ Add">+ Hinzufügen</span>
+      </div>
+      <div class="habits-list" id="today-list"></div>
+    </section>
+
+    <!-- PAGE: STATS -->
+    <section id="page-stats" class="page">
+      <div class="section-hd mb" style="margin-bottom:.75rem">
+        <span class="section-title" data-de="Aktivitäts-Heatmap" data-en="Activity Heatmap">Aktivitäts-Heatmap</span>
+      </div>
+      <div class="card hm-card mb">
+        <div class="hm-month-label" id="hm-month-label"></div>
+        <div class="hm-grid" id="hm-grid"></div>
+        <div class="hm-legend">
+          <span class="hm-legend-label" data-de="Weniger" data-en="Less">Weniger</span>
+          <div class="hm-legend-cells">
+            <div class="hm-cell l0"></div><div class="hm-cell l1"></div>
+            <div class="hm-cell l2"></div><div class="hm-cell l3"></div><div class="hm-cell l4"></div>
+          </div>
+          <span class="hm-legend-label" data-de="Mehr" data-en="More">Mehr</span>
+        </div>
+      </div>
+      <div class="section-hd" style="margin-bottom:.75rem">
+        <span class="section-title" data-de="Wochenvergleich" data-en="Weekly progress">Wochenvergleich</span>
+      </div>
+      <div class="card chart-card mb">
+        <div class="chart-wrap"><canvas id="chart-week"></canvas></div>
+      </div>
+      <div class="section-hd" style="margin-bottom:.75rem">
+        <span class="section-title" data-de="Meilenstein-Badges" data-en="Milestone Badges">Meilenstein-Badges</span>
+      </div>
+      <div class="badges-grid" id="badges-grid"></div>
+    </section>
+
+    <!-- PAGE: MANAGE -->
+    <section id="page-manage" class="page">
+      <button class="add-habit-btn" id="add-habit-btn" onclick="openAddModal()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 3v12M3 9h12"/>
+        </svg>
+        <span data-de="Neue Gewohnheit hinzufügen" data-en="Add new habit">Neue Gewohnheit hinzufügen</span>
+      </button>
+      <div id="manage-list"></div>
+    </section>
+
+    <!-- PAGE: SETTINGS -->
+    <section id="page-settings" class="page">
+      <div class="section-hd" style="margin-bottom:.75rem">
+        <span class="section-title" data-de="Darstellung" data-en="Appearance">Darstellung</span>
+      </div>
+      <div class="settings-section card">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label" data-de="Dark Mode" data-en="Dark Mode">Dark Mode</div>
+          </div>
+          <button class="toggle-btn" id="dark-toggle" onclick="toggleTheme()"></button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label" data-de="Akzentfarbe" data-en="Accent color">Akzentfarbe</div>
+            <div class="settings-sub" data-de="Deine persönliche Farbe" data-en="Your personal color">Deine persönliche Farbe</div>
+          </div>
+          <div class="accent-dots" id="accent-picker"></div>
+        </div>
+      </div>
+      <div class="section-hd" style="margin-bottom:.75rem">
+        <span class="section-title" data-de="Sprache" data-en="Language">Sprache</span>
+      </div>
+      <div class="settings-section card">
+        <div class="settings-row">
+          <div><div class="settings-label">Deutsch / English</div></div>
+          <button class="toggle-btn" id="lang-toggle" onclick="toggleLang()"></button>
+        </div>
+      </div>
+      <div class="section-hd" style="margin-bottom:.75rem">
+        <span class="section-title" data-de="Daten" data-en="Data">Daten</span>
+      </div>
+      <div class="settings-section card">
+        <div class="settings-row clickable" onclick="openResetModal()">
+          <div>
+            <div class="settings-label settings-danger" data-de="Alle Daten zurücksetzen" data-en="Reset all data">Alle Daten zurücksetzen</div>
+            <div class="settings-sub" data-de="Nicht rückgängig machbar" data-en="Cannot be undone">Nicht rückgängig machbar</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)">
+            <path d="M6 12l4-4-4-4"/>
+          </svg>
+        </div>
+      </div>
+      <div class="footer-text">
+        <div>SimplovaStudio Habit Tracker v2.0</div>
+        <div data-de="Cleane Vorlagen. Einfaches Leben." data-en="Clean Templates. Simple Life.">Cleane Vorlagen. Einfaches Leben.</div>
+      </div>
+    </section>
+
+  </div><!-- /pages -->
+</main>
+```
+
+  </div><!-- /app-body -->
+
+  <!-- Bottom Nav (mobile/tablet) -->
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="navTo('today')" id="nav-today">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+        <path d="M10 2L3 7v11h5v-5h4v5h5V7L10 2z"/>
+      </svg>
+      <span data-de="Heute" data-en="Today">Heute</span>
+    </button>
+    <button class="nav-item" onclick="navTo('stats')" id="nav-stats">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+        <rect x="3" y="10" width="3" height="7" rx="1"/><rect x="8.5" y="6" width="3" height="11" rx="1"/><rect x="14" y="3" width="3" height="14" rx="1"/>
+      </svg>
+      <span data-de="Statistik" data-en="Stats">Statistik</span>
+    </button>
+    <button class="nav-item" onclick="navTo('manage')" id="nav-manage">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+        <path d="M4 6h12M4 10h12M4 14h8"/>
+      </svg>
+      <span data-de="Habits" data-en="Habits">Habits</span>
+    </button>
+    <button class="nav-item" onclick="navTo('settings')" id="nav-settings">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75">
+        <circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/>
+      </svg>
+      <span data-de="Einstellungen" data-en="Settings">Einstellungen</span>
+    </button>
+  </nav>
+</div><!-- /app -->
+
+<!-- ── HABIT MODAL ── -->
+
+<div class="modal-overlay" id="habit-modal" onclick="closeModalOnOverlay(event,'habit-modal')">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="habit-modal-title">Neue Gewohnheit</div>
+    <input class="modal-input" id="modal-habit-name" type="text" maxlength="40">
+    <label class="modal-label" id="modal-color-label">Farbe</label>
+    <div class="ob-colors" id="modal-color-picker" style="margin-bottom:1.25rem"></div>
+    <label class="modal-label" id="modal-freq-label">Häufigkeit</label>
+    <div class="ob-freqs" id="modal-freq-picker" style="margin-bottom:1.25rem"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('habit-modal')" id="modal-cancel-btn">Abbrechen</button>
+      <button class="modal-btn primary" onclick="saveHabit()" id="modal-save-btn">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESET MODAL ── -->
+
+<div class="modal-overlay" id="reset-modal" onclick="closeModalOnOverlay(event,'reset-modal')">
+  <div class="modal-panel" style="text-align:center;max-width:380px">
+    <div class="modal-handle"></div>
+    <div style="font-size:36px;margin-bottom:.75rem">⚠️</div>
+    <div class="modal-title" id="reset-modal-title" style="text-align:center">Alle Daten löschen?</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6" id="reset-modal-body">Alle Habits und Einträge werden unwiderruflich gelöscht.</div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('reset-modal')" id="reset-cancel-btn">Abbrechen</button>
+      <button class="modal-btn danger" onclick="confirmReset()" id="reset-confirm-btn">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFETTI ── -->
+
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<script>
+// ════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════
+const ACCENTS = [
+  { color: '#06D6A0', rgb: '6,214,160' },
+  { color: '#7B61FF', rgb: '123,97,255' },
+  { color: '#EF476F', rgb: '239,71,111' },
+  { color: '#FFD166', rgb: '255,209,102' }
+];
+
+const FREQS_DE = ['Täglich','Mo–Fr','3x/Woche','2x/Woche','Wöchentlich'];
+const FREQS_EN = ['Daily','Mon–Fri','3x/week','2x/week','Weekly'];
+
+const QUOTES_DE = [
+  { t: 'Kleine Schritte führen zu großen Veränderungen.', a: '— Lao-Tzu' },
+  { t: 'Disziplin ist die Brücke zwischen Zielen und Erfolg.', a: '— Jim Rohn' },
+  { t: 'Du wirst, wer du täglich tust.', a: '— Aristoteles' },
+  { t: 'Gewohnheiten formen Charakter. Charakter formt Schicksal.', a: '— Heraklit' },
+  { t: 'Motivation bringt dich in Gang. Gewohnheit hält dich am Laufen.', a: '— Jim Ryun' },
+  { t: 'Erfolg ist die Summe kleiner Anstrengungen, Tag für Tag.', a: '— Robert Collier' },
+  { t: 'Der beste Zeitpunkt war gestern. Der zweitbeste ist jetzt.', a: '— Sprichwort' },
+  { t: 'Wer aufhört besser zu werden, hat aufgehört gut zu sein.', a: '— Philip Rosenthal' },
+  { t: 'Jeder Experte war einmal ein Anfänger.', a: '— Sprichwort' },
+  { t: 'Ein Ziel ohne Plan ist nur ein Wunsch.', a: '— Antoine de Saint-Exupéry' },
+  { t: 'Tue heute, was andere nicht wollen — und lebe morgen wie andere nicht können.', a: '— Sprichwort' },
+  { t: 'Disziplin bedeutet, das Wichtigste zu wählen, nicht das Einfachste.', a: '— Abraham Lincoln' },
+  { t: 'Beginne das Notwendige, dann das Mögliche — und plötzlich das Unmögliche.', a: '— Franz von Assisi' },
+  { t: 'Nicht die Umstände machen den Menschen, sie enthüllen ihn.', a: '— Friedrich Schiller' },
+];
+const QUOTES_EN = [
+  { t: 'Small steps lead to big changes.', a: '— Lao Tzu' },
+  { t: 'Discipline is the bridge between goals and accomplishment.', a: '— Jim Rohn' },
+  { t: 'You are what you repeatedly do.', a: '— Aristotle' },
+  { t: 'Habits shape character. Character shapes destiny.', a: '— Heraclitus' },
+  { t: 'Motivation gets you going, habit keeps you going.', a: '— Jim Ryun' },
+  { t: 'Success is the sum of small efforts repeated day in and day out.', a: '— Robert Collier' },
+  { t: 'The best time to start was yesterday. The second best is now.', a: '— Proverb' },
+  { t: 'When you stop getting better, you stop being good.', a: '— Philip Rosenthal' },
+  { t: 'Every expert was once a beginner.', a: '— Proverb' },
+  { t: 'A goal without a plan is just a wish.', a: '— Antoine de Saint-Exupéry' },
+  { t: 'Do today what others won\'t — live tomorrow like others can\'t.', a: '— Proverb' },
+  { t: 'Discipline means choosing what you want most over what you want now.', a: '— Abraham Lincoln' },
+  { t: 'Start with the necessary, then the possible — and suddenly the impossible.', a: '— Francis of Assisi' },
+  { t: 'Circumstances don\'t make the man — they reveal him.', a: '— Friedrich Schiller' },
+];
+
+const BADGES = [
+  { icon: '🔥', days: 7,   de: '7 Tage',   en: '7 Days' },
+  { icon: '⚡', days: 14,  de: '14 Tage',  en: '14 Days' },
+  { icon: '🌟', days: 21,  de: '21 Tage',  en: '21 Days' },
+  { icon: '🏆', days: 30,  de: '30 Tage',  en: '30 Days' },
+  { icon: '💎', days: 60,  de: '60 Tage',  en: '60 Days' },
+  { icon: '👑', days: 100, de: '100 Tage', en: '100 Days' },
+];
+
+const MILESTONES = [7, 14, 21, 30, 60, 100];
+const LS_KEY = 'simplova_habit-tracker_v1';
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  name: '',
+  lang: 'de',
+  theme: 'light',
+  accent: '#06D6A0',
+  habits: [],
+  log: {}
+};
+
+// Onboarding temp state
+let obColor = ACCENTS[0].color;
+let obFreq = 0;
+let modalColor = ACCENTS[0].color;
+let modalFreq = 0;
+let editingId = null;
+let weekChart = null;
+
+// ════════════════════════════════════════
+// STORAGE
+// ════════════════════════════════════════
+function save() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e) {}
+}
+function load() {
+  try {
+    const d = localStorage.getItem(LS_KEY);
+    if (d) S = Object.assign({}, S, JSON.parse(d));
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════
+// DATE HELPERS
+// ════════════════════════════════════════
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function dateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+function weekStart() {
+  const d = new Date();
+  const dow = d.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+// ════════════════════════════════════════
+// STREAK LOGIC
+// ════════════════════════════════════════
+function calcStreak(id) {
+  let streak = 0;
+  let d = new Date();
+  // If not done today, start from yesterday
+  if (!(S.log[today()] || []).includes(id)) {
+    d.setDate(d.getDate() - 1);
+  }
+  while (true) {
+    const key = dateStr(d);
+    if ((S.log[key] || []).includes(id)) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else break;
+  }
+  return streak;
+}
+function bestStreak(id) {
+  let best = 0, cur = 0;
+  const keys = Object.keys(S.log).sort();
+  for (let i = 0; i < keys.length; i++) {
+    if ((S.log[keys[i]] || []).includes(id)) {
+      // Check if consecutive with previous
+      if (i > 0) {
+        const prev = new Date(keys[i-1]);
+        const curr = new Date(keys[i]);
+        const diff = (curr - prev) / (1000*60*60*24);
+        if (diff === 1) { cur++; } else { cur = 1; }
+      } else { cur = 1; }
+      best = Math.max(best, cur);
+    }
+  }
+  return best;
+}
+function overallBest() {
+  return S.habits.reduce((m, h) => Math.max(m, bestStreak(h.id)), 0);
+}
+function weekDoneCount(id) {
+  const ws = weekStart();
+  const tk = today();
+  let count = 0;
+  for (let i = 0; i < 7; i++) {
+    const key = dateStr(addDays(ws, i));
+    if (key > tk) break;
+    if ((S.log[key] || []).includes(id)) count++;
+  }
+  return count;
+}
+function weekSuccessRate() {
+  const ws = weekStart();
+  const tk = today();
+  const total = S.habits.length;
+  if (!total) return 0;
+  let tp = 0, td = 0;
+  for (let i = 0; i < 7; i++) {
+    const key = dateStr(addDays(ws, i));
+    if (key > tk) break;
+    tp += total;
+    td += (S.log[key] || []).length;
+  }
+  return tp > 0 ? Math.round(td / tp * 100) : 0;
+}
+
+// ════════════════════════════════════════
+// ACCENT / THEME / LANG
+// ════════════════════════════════════════
+function applyAccent(color) {
+  S.accent = color;
+  const ac = ACCENTS.find(a => a.color === color);
+  const rgb = ac ? ac.rgb : '6,214,160';
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--accent-rgb', rgb);
+}
+function toggleTheme() {
+  S.theme = S.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', S.theme);
+  document.getElementById('dark-toggle').classList.toggle('on', S.theme === 'dark');
+  document.getElementById('theme-btn').textContent = S.theme === 'dark' ? '☀️' : '🌙';
+  save();
+  if (weekChart) renderWeekChart();
+}
+function toggleLang() {
+  S.lang = S.lang === 'de' ? 'en' : 'de';
+  save();
+  applyLang();
+  renderAll();
+}
+function applyLang() {
+  const l = S.lang;
+  document.getElementById('lang-btn').textContent = l.toUpperCase();
+  document.getElementById('lang-toggle').classList.toggle('on', l === 'en');
+  document.querySelectorAll('[data-de]').forEach(el => {
+    el.textContent = el.getAttribute(`data-${l}`);
+  });
+  document.querySelectorAll('[data-de-placeholder]').forEach(el => {
+    el.placeholder = el.getAttribute(`data-${l}-placeholder`);
+  });
+}
+function freqLabel(i) {
+  return S.lang === 'de' ? FREQS_DE[i || 0] : FREQS_EN[i || 0];
+}
+
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+function navTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .sidebar-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  const navEl = document.getElementById(`nav-${page}`);
+  const sbEl = document.getElementById(`sb-${page}`);
+  if (navEl) navEl.classList.add('active');
+  if (sbEl) sbEl.classList.add('active');
+  if (page === 'stats') { renderHeatmap(); renderWeekChart(); renderBadges(); }
+  if (page === 'manage') renderManage();
+}
+
+// ════════════════════════════════════════
+// ONBOARDING
+// ════════════════════════════════════════
+function initOnboarding() {
+  // Build color picker
+  document.getElementById('ob-color-picker').innerHTML = ACCENTS.map((a, i) =>
+    `<div class="ob-color${i===0?' sel':''}" style="background:${a.color}" data-color="${a.color}" onclick="obPickColor(this,'ob-color-picker')">✓</div>`
+  ).join('');
+  // Build freq picker
+  document.getElementById('ob-freq-picker').innerHTML = FREQS_DE.map((f, i) =>
+    `<div class="ob-freq${i===0?' sel':''}" data-i="${i}" onclick="obPickFreq(this,'ob-freq-picker')">${f}</div>`
+  ).join('');
+}
+function obPickColor(el, listId) {
+  document.querySelectorAll(`#${listId} .ob-color`).forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  obColor = el.dataset.color;
+}
+function obPickFreq(el, listId) {
+  document.querySelectorAll(`#${listId} .ob-freq`).forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  obFreq = parseInt(el.dataset.i);
+}
+function obNext() {
+  const name = document.getElementById('ob-name').value.trim();
+  if (!name) { document.getElementById('ob-name').focus(); return; }
+  S.name = name;
+  document.getElementById('ob-s1').classList.remove('active');
+  document.getElementById('ob-s2').classList.add('active');
+  document.getElementById('dot-1').classList.remove('active');
+  document.getElementById('dot-1').classList.add('done');
+  document.getElementById('dot-2').classList.add('active');
+  document.getElementById('ob-habit').focus();
+}
+function obFinish() {
+  const hname = document.getElementById('ob-habit').value.trim();
+  if (!hname) { document.getElementById('ob-habit').focus(); return; }
+  S.habits.push({
+    id: Date.now().toString(),
+    name: hname,
+    color: obColor,
+    freq: obFreq,
+    created: today()
+  });
+  save();
+  launchApp();
+}
+
+// ════════════════════════════════════════
+// APP LAUNCH
+// ════════════════════════════════════════
+function launchApp() {
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  applyAccent(S.accent);
+  document.documentElement.setAttribute('data-theme', S.theme);
+  document.getElementById('dark-toggle').classList.toggle('on', S.theme === 'dark');
+  document.getElementById('theme-btn').textContent = S.theme === 'dark' ? '☀️' : '🌙';
+  initAccentPicker();
+  applyLang();
+  renderAll();
+  // Register SW
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+// ════════════════════════════════════════
+// RENDER ALL
+// ════════════════════════════════════════
+function renderAll() {
+  renderTopbar();
+  renderQuote();
+  renderKPIs();
+  renderWeek();
+  renderTodayList();
+  renderManage();
+}
+
+function renderTopbar() {
+  const h = new Date().getHours();
+  const greeting = S.lang === 'de'
+    ? (h < 12 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend')
+    : (h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening');
+  document.getElementById('topbar-greeting').textContent = greeting + ',';
+  document.getElementById('topbar-name').textContent = S.name + ' 👋';
+}
+
+function renderQuote() {
+  const quotes = S.lang === 'de' ? QUOTES_DE : QUOTES_EN;
+  const q = quotes[new Date().getDay() % quotes.length];
+  document.getElementById('quote-text').textContent = `"${q.t}"`;
+  document.getElementById('quote-author').textContent = q.a;
+}
+
+function renderKPIs() {
+  const tk = today();
+  const done = (S.log[tk] || []).length;
+  const total = S.habits.length;
+  document.getElementById('kpi-done').textContent = done;
+  document.getElementById('kpi-done-sub').textContent =
+    `${S.lang==='de'?'von':'of'} ${total} Habits`;
+  document.getElementById('kpi-best').textContent = overallBest();
+  document.getElementById('kpi-rate').textContent = weekSuccessRate() + '%';
+  document.getElementById('kpi-count').textContent = total;
+}
+
+function renderWeek() {
+  const ws = weekStart();
+  const tk = today();
+  const total = S.habits.length || 1;
+  const DL_DE = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+  const DL_EN = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  const labels = S.lang === 'de' ? DL_DE : DL_EN;
+
+  document.getElementById('week-days').innerHTML = Array.from({length:7}, (_, i) => {
+    const d = addDays(ws, i);
+    const key = dateStr(d);
+    const done = (S.log[key] || []).length;
+    const isFuture = key > tk;
+    const isToday = key === tk;
+    const pct = done / total;
+    let cls = isFuture ? 'future' : pct >= 1 ? 'full' : pct > 0 ? 'part' : 'empty';
+    if (isToday) cls += ' today';
+    return `<div class="wday">
+      <div class="wday-label">${labels[i]}</div>
+      <div class="wday-dot ${cls}">${isFuture ? '' : done}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTodayList() {
+  const el = document.getElementById('today-list');
+  if (!S.habits.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🌱</div>
+      <div class="empty-text" data-de="Noch keine Habits – füge deine erste hinzu!" data-en="No habits yet – add your first one!">
+        ${S.lang==='de' ? 'Noch keine Habits – füge deine erste hinzu!' : 'No habits yet – add your first one!'}
+      </div>
+    </div>`;
+    return;
+  }
+  const tk = today();
+  const doneList = S.log[tk] || [];
+  el.innerHTML = S.habits.map(h => {
+    const isDone = doneList.includes(h.id);
+    const streak = calcStreak(h.id);
+    const wdone = weekDoneCount(h.id);
+    const pct = Math.min(wdone / 7 * 100, 100);
+    return `<div class="card habit-row${isDone ? ' done' : ''}">
+      <div class="hcheck${isDone ? ' checked' : ''}"
+        style="${isDone ? `background:${h.color}` : `border-color:${h.color}`}"
+        onclick="toggleHabit('${h.id}')">
+        ${isDone ? '✓' : ''}
+      </div>
+      <div class="hinfo">
+        <div class="hname">${escHtml(h.name)}</div>
+        <div class="hmeta">
+          <span class="hstreak">🔥 ${streak} ${S.lang==='de'?'Tage':'days'}</span>
+          <span class="hfreq">${freqLabel(h.freq)}</span>
+        </div>
+        <div class="hprog-wrap">
+          <div class="hprog" style="width:${pct}%;background:${h.color}"></div>
+        </div>
+      </div>
+      <div class="hdot" style="background:${h.color}"></div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHabit(id) {
+  const tk = today();
+  if (!S.log[tk]) S.log[tk] = [];
+  const idx = S.log[tk].indexOf(id);
+  const wasOff = idx === -1;
+  if (wasOff) S.log[tk].push(id);
+  else S.log[tk].splice(idx, 1);
+  save();
+  renderKPIs();
+  renderWeek();
+  renderTodayList();
+  if (wasOff) {
+    const streak = calcStreak(id);
+    if (MILESTONES.includes(streak)) showConfetti();
+  }
+}
+
+// ════════════════════════════════════════
+// HEATMAP
+// ════════════════════════════════════════
+function renderHeatmap() {
+  const now = new Date();
+  const yr = now.getFullYear();
+  const mo = now.getMonth();
+  const MO_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const MO_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('hm-month-label').textContent = (S.lang==='de' ? MO_DE : MO_EN)[mo] + ' ' + yr;
+
+  const total = S.habits.length || 1;
+  const firstDay = new Date(yr, mo, 1);
+  const lastDay = new Date(yr, mo+1, 0);
+  let startDow = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1; // Mon=0
+
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const key = `${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const done = (S.log[key] || []).length;
+    const pct = done / total;
+    cells.push(pct === 0 ? 0 : pct < .25 ? 1 : pct < .5 ? 2 : pct < .75 ? 3 : 4);
+  }
+
+  const cols = [];
+  for (let i = 0; i < cells.length; i += 7) cols.push(cells.slice(i, i+7));
+
+  document.getElementById('hm-grid').innerHTML = cols.map(col =>
+    `<div class="hm-col">${col.map(c =>
+      c === null
+        ? `<div class="hm-cell" style="opacity:0"></div>`
+        : `<div class="hm-cell l${c}"></div>`
+    ).join('')}</div>`
+  ).join('');
+}
+
+// ════════════════════════════════════════
+// WEEK CHART
+// ════════════════════════════════════════
+function renderWeekChart() {
+  const ws = weekStart();
+  const tk = today();
+  const total = S.habits.length || 1;
+  const DL_DE = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+  const DL_EN = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  const labels = S.lang === 'de' ? DL_DE : DL_EN;
+  const data = Array.from({length:7}, (_, i) => {
+    const key = dateStr(addDays(ws, i));
+    if (key > tk) return 0;
+    return Math.round((S.log[key] || []).length / total * 100);
+  });
+
+  if (weekChart) { weekChart.destroy(); weekChart = null; }
+  const ctx = document.getElementById('chart-week').getContext('2d');
+  weekChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: `rgba(${ACCENTS.find(a=>a.color===S.accent)?.rgb||'6,214,160'},.55)`,
+        borderColor: S.accent,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', color: 'var(--text3)', font: { size: 10 } },
+          grid: { color: 'rgba(128,128,128,.1)' }
+        },
+        x: {
+          ticks: { color: 'var(--text3)', font: { size: 10 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════
+// BADGES
+// ════════════════════════════════════════
+function renderBadges() {
+  const best = overallBest();
+  document.getElementById('badges-grid').innerHTML = BADGES.map(b => {
+    const earned = best >= b.days;
+    return `<div class="card badge-item">
+      <span class="badge-icon${earned ? ' earned' : ''}">${b.icon}</span>
+      <div class="badge-label">${S.lang==='de' ? b.de : b.en}</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// MANAGE
+// ════════════════════════════════════════
+function renderManage() {
+  const addBtn = document.getElementById('add-habit-btn');
+  addBtn.style.display = S.habits.length >= 15 ? 'none' : 'flex';
+
+  const el = document.getElementById('manage-list');
+  if (!S.habits.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text">${S.lang==='de' ? 'Noch keine Habits vorhanden.' : 'No habits yet.'}</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = S.habits.map(h => `
+    <div class="card manage-row">
+      <div class="manage-dot" style="background:${h.color}"></div>
+      <div class="manage-info">
+        <div class="manage-name">${escHtml(h.name)}</div>
+        <div class="manage-sub">🔥 ${calcStreak(h.id)} ${S.lang==='de'?'Tage':'days'} · ${freqLabel(h.freq)}</div>
+      </div>
+      <div class="manage-actions">
+        <button class="manage-btn" onclick="openEditModal('${h.id}')">✏️</button>
+        <button class="manage-btn del" onclick="deleteHabit('${h.id}')">🗑</button>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function deleteHabit(id) {
+  S.habits = S.habits.filter(h => h.id !== id);
+  save();
+  renderAll();
+}
+
+// ════════════════════════════════════════
+// HABIT MODAL
+// ════════════════════════════════════════
+function openAddModal() {
+  editingId = null;
+  modalColor = S.accent;
+  modalFreq = 0;
+  document.getElementById('habit-modal-title').textContent = S.lang==='de' ? 'Neue Gewohnheit' : 'New Habit';
+  document.getElementById('modal-save-btn').textContent = S.lang==='de' ? 'Hinzufügen' : 'Add';
+  document.getElementById('modal-cancel-btn').textContent = S.lang==='de' ? 'Abbrechen' : 'Cancel';
+  document.getElementById('modal-color-label').textContent = S.lang==='de' ? 'Farbe' : 'Color';
+  document.getElementById('modal-freq-label').textContent = S.lang==='de' ? 'Häufigkeit' : 'Frequency';
+  document.getElementById('modal-habit-name').value = '';
+  buildModalPickers();
+  openModal('habit-modal');
+  setTimeout(() => document.getElementById('modal-habit-name').focus(), 300);
+}
+
+function openEditModal(id) {
+  editingId = id;
+  const h = S.habits.find(x => x.id === id);
+  modalColor = h.color;
+  modalFreq = h.freq || 0;
+  document.getElementById('habit-modal-title').textContent = S.lang==='de' ? 'Gewohnheit bearbeiten' : 'Edit Habit';
+  document.getElementById('modal-save-btn').textContent = S.lang==='de' ? 'Speichern' : 'Save';
+  document.getElementById('modal-cancel-btn').textContent = S.lang==='de' ? 'Abbrechen' : 'Cancel';
+  document.getElementById('modal-color-label').textContent = S.lang==='de' ? 'Farbe' : 'Color';
+  document.getElementById('modal-freq-label').textContent = S.lang==='de' ? 'Häufigkeit' : 'Frequency';
+  document.getElementById('modal-habit-name').value = h.name;
+  buildModalPickers();
+  openModal('habit-modal');
+}
+
+function buildModalPickers() {
+  document.getElementById('modal-color-picker').innerHTML = ACCENTS.map(a =>
+    `<div class="ob-color${a.color===modalColor?' sel':''}" style="background:${a.color}" data-color="${a.color}"
+      onclick="modalPickColor(this)">✓</div>`
+  ).join('');
+  const freqs = S.lang === 'de' ? FREQS_DE : FREQS_EN;
+  document.getElementById('modal-freq-picker').innerHTML = freqs.map((f, i) =>
+    `<div class="ob-freq${i===modalFreq?' sel':''}" data-i="${i}" onclick="modalPickFreq(this)">${f}</div>`
+  ).join('');
+}
+
+function modalPickColor(el) {
+  document.querySelectorAll('#modal-color-picker .ob-color').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  modalColor = el.dataset.color;
+}
+function modalPickFreq(el) {
+  document.querySelectorAll('#modal-freq-picker .ob-freq').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  modalFreq = parseInt(el.dataset.i);
+}
+
+function saveHabit() {
+  const name = document.getElementById('modal-habit-name').value.trim();
+  if (!name) { document.getElementById('modal-habit-name').focus(); return; }
+  // Read selected values from DOM
+  const selC = document.querySelector('#modal-color-picker .sel');
+  const selF = document.querySelector('#modal-freq-picker .sel');
+  if (selC) modalColor = selC.dataset.color;
+  if (selF) modalFreq = parseInt(selF.dataset.i);
+
+  if (editingId) {
+    const h = S.habits.find(x => x.id === editingId);
+    if (h) { h.name = name; h.color = modalColor; h.freq = modalFreq; }
+  } else {
+    if (S.habits.length >= 15) return;
+    S.habits.push({ id: Date.now().toString(), name, color: modalColor, freq: modalFreq, created: today() });
+  }
+  save();
+  closeModal('habit-modal');
+  renderAll();
+}
+
+// ════════════════════════════════════════
+// RESET MODAL
+// ════════════════════════════════════════
+function openResetModal() {
+  document.getElementById('reset-modal-title').textContent = S.lang==='de' ? 'Alle Daten löschen?' : 'Delete all data?';
+  document.getElementById('reset-modal-body').textContent = S.lang==='de'
+    ? 'Alle Habits und Einträge werden unwiderruflich gelöscht.'
+    : 'All habits and entries will be permanently deleted.';
+  document.getElementById('reset-cancel-btn').textContent = S.lang==='de' ? 'Abbrechen' : 'Cancel';
+  document.getElementById('reset-confirm-btn').textContent = S.lang==='de' ? 'Löschen' : 'Delete';
+  openModal('reset-modal');
+}
+function confirmReset() {
+  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+  location.reload();
+}
+
+// ════════════════════════════════════════
+// MODAL HELPERS
+// ════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeModalOnOverlay(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// ════════════════════════════════════════
+// ACCENT PICKER (settings)
+// ════════════════════════════════════════
+function initAccentPicker() {
+  document.getElementById('accent-picker').innerHTML = ACCENTS.map(a =>
+    `<div class="accent-dot${a.color===S.accent?' sel':''}" style="background:${a.color}" data-color="${a.color}"
+      onclick="pickAccent(this)">✓</div>`
+  ).join('');
+}
+function pickAccent(el) {
+  document.querySelectorAll('.accent-dot').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  applyAccent(el.dataset.color);
+  save();
+  renderAll();
+  if (weekChart) renderWeekChart();
+}
+
+// ════════════════════════════════════════
+// CONFETTI
+// ════════════════════════════════════════
+function showConfetti() {
+  const wrap = document.getElementById('confetti-wrap');
+  wrap.innerHTML = '';
+  const colors = ['#06D6A0','#FFD166','#EF476F','#7B61FF','#00B4D8'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'conf-piece';
+    const size = 6 + Math.random() * 6;
+    el.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${size}px; height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      animation-duration:${1.5+Math.random()*1.5}s;
+      animation-delay:${Math.random()*.5}s;
+    `;
+    wrap.appendChild(el);
+  }
+  setTimeout(() => { wrap.innerHTML = ''; }, 3500);
+}
+
+// ════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+load();
+initOnboarding();
+
+if (S.name) {
+  launchApp();
+} else {
+  // Apply theme to onboarding too
+  document.documentElement.setAttribute('data-theme', S.theme);
+}
+</script>
+
+</body>
+</html>
