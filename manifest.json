@@ -3,7 +3,7 @@
   "short_name": "Habits",
   "description": "Cleane Gewohnheiten. Starke Ergebnisse.",
   "theme_color": "#06D6A0",
-  "background_color": "#1A1A2E",
+  "background_color": "#fafbfc",
   "display": "standalone",
   "orientation": "portrait",
   "start_url": "./index.html",
