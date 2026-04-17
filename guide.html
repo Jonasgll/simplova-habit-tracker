@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker — SimplovaStudio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: #fff;
+    color: #2c2c2c;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── PAGE LAYOUT ── */
+  .page {
+    width: 794px;
+    min-height: 1123px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    page-break-after: always;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: #6b9a9a;
+    color: #fff;
+    padding: 48px 56px 52px;
+  }
+  .header .brand {
+    font-family: 'Arial', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin-bottom: 4px;
+  }
+  .header .tagline {
+    font-size: 12px;
+    opacity: 0.8;
+    font-family: 'Arial', sans-serif;
+    margin-bottom: 36px;
+  }
+  .header h1 {
+    font-family: 'Arial', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .header .subtitle {
+    font-family: 'Arial', sans-serif;
+    font-size: 16px;
+    opacity: 0.85;
+  }
+
+  /* ── BODY ── */
+  .body {
+    background: #f2ede8;
+    flex: 1;
+    padding: 44px 56px;
+  }
+
+  .intro-text {
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 24px;
+  }
+
+  /* ── LINK BOX ── */
+  .link-box {
+    background: #fff;
+    border: 1.5px solid #c8d8d8;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 36px;
+  }
+  .link-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #6b9a9a;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .link-url {
+    font-family: 'Arial', sans-serif;
+    font-size: 15px;
+    color: #2c2c2c;
+    font-weight: 500;
+    word-break: break-all;
+    margin-bottom: 6px;
+  }
+  .link-hint {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    color: #888;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #d8d0c8;
+    margin: 32px 0;
+  }
+
+  /* ── HOW TO GET STARTED ── */
+  .section-title {
+    font-family: 'Arial', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2c2c2c;
+    margin-bottom: 24px;
+  }
+
+  .steps { display: flex; flex-direction: column; gap: 18px; margin-bottom: 32px; }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #6b9a9a;
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-content h3 {
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2c2c2c;
+    margin-bottom: 3px;
+  }
+  .step-content p {
+    font-family: 'Arial', sans-serif;
+    font-size: 12.5px;
+    color: #666;
+  }
+
+  /* ── TIP BOX ── */
+  .tip-box {
+    background: #e8f0f0;
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .tip-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b9a9a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .tip-label::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: #6b9a9a;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .tip-text {
+    font-family: 'Arial', sans-serif;
+    font-size: 12.5px;
+    color: #444;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #6b9a9a;
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+    padding: 18px;
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+  }
+  .footer strong { font-weight: 700; }
+  .footer .sub {
+    margin-top: 3px;
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  /* ── PAGE 2 ── */
+  .page2-header {
+    background: #6b9a9a;
+    color: #fff;
+    padding: 18px 56px;
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .page2-header span { opacity: 0.75; }
+
+  .features-body {
+    background: #f2ede8;
+    flex: 1;
+    padding: 44px 56px;
+  }
+  .features-title {
+    font-family: 'Arial', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #2c2c2c;
+  }
+  .features-subtitle {
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 32px;
+  }
+
+  .features-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .feature-item {
+    background: #fff;
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+  .feature-item h4 {
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b9a9a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .feature-item h4::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: #6b9a9a;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .feature-item p {
+    font-family: 'Arial', sans-serif;
+    font-size: 12px;
+    color: #666;
+    padding-left: 18px;
+    line-height: 1.5;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .page { margin: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ PAGE 1 ═══════════════ -->
+<div class="page">
+  <div class="header">
+    <div class="brand">SimplovaStudio</div>
+    <div class="tagline">Clean Templates. Simple Life.</div>
+    <h1>Your Habit Tracker</h1>
+    <div class="subtitle">is ready. Open it. Use it. Own it.</div>
+  </div>
+
+  <div class="body">
+    <p class="intro-text">Thank you for your purchase! Your Habit Tracker is one tap away.</p>
+
+    <div class="link-box">
+      <div class="link-label">Your Personal Link</div>
+      <div class="link-url">https://jonasgll.github.io/simplova-habit-tracker/</div>
+      <div class="link-hint">Open in Safari (iPhone) or Chrome (Android/Desktop)</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-title">How to get started</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Open the link above</h3>
+          <p>Tap it or copy it into Safari (iPhone) or Chrome (Android/Desktop).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Set up in 30 seconds</h3>
+          <p>Enter your name and choose your first habits — just once.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Add to Home Screen</h3>
+          <p>iPhone: Safari → Share → 'Add to Home Screen' → Done.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Start tracking</h3>
+          <p>Your data saves automatically. Private. Local. No account needed.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-label">iPhone Tip</div>
+      <div class="tip-text">Open link in Safari → tap Share icon → 'Add to Home Screen' → tap Add. Done!</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <strong>SimplovaStudio · Clean Templates. Simple Life.</strong>
+    <div class="sub">For personal use only · Not for redistribution · © 2026 SimplovaStudio</div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 2 ═══════════════ -->
+<div class="page">
+  <div class="page2-header">
+    <span>SimplovaStudio · </span>Habit Tracker
+  </div>
+
+  <div class="features-body">
+    <div class="features-title">What's included</div>
+    <div class="features-subtitle">Everything you need to build better habits — all in one place.</div>
+
+    <div class="features-grid">
+      <div class="feature-item">
+        <h4>Daily Habit Tracking</h4>
+        <p>Check off your habits each day with a single tap. See today's progress at a glance.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Streaks & Consistency Score</h4>
+        <p>Track your current streak and all-time best. Stay motivated by keeping the streak alive.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Statistics & Charts</h4>
+        <p>Weekly and monthly bar charts show your completion rate over time.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Custom Habits</h4>
+        <p>Create your own habits with custom name, emoji, color and frequency (daily, weekdays, weekends, custom).</p>
+      </div>
+      <div class="feature-item">
+        <h4>Categories</h4>
+        <p>Organize habits into categories: Health, Fitness, Learning, Mind, Productivity and more.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Dark & Light Mode</h4>
+        <p>Switch anytime with one tap — top right corner.</p>
+      </div>
+      <div class="feature-item">
+        <h4>English & German</h4>
+        <p>Toggle language instantly. DE or EN — your choice.</p>
+      </div>
+      <div class="feature-item">
+        <h4>100% Private & Offline</h4>
+        <p>All data is stored locally on your device. No account, no cloud, no tracking.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <strong>SimplovaStudio · Clean Templates. Simple Life.</strong>
+    <div class="sub">For personal use only · Not for redistribution · © 2026 SimplovaStudio</div>
+  </div>
+</div>
+
+</body>
+</html>
