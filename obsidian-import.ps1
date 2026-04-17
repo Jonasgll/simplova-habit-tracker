@@ -1,18 +1,14 @@
 # ============================================================
 # Obsidian Import Script — Claude Code Session
 # ============================================================
-# Voraussetzung: Obsidian Local REST API Plugin aktiviert
-# Plugin: https://github.com/coddingtonbear/obsidian-local-rest-api
-#
-# Anleitung:
-# 1. API Key kopieren: Obsidian → Einstellungen → Local REST API → API Key
-# 2. Dieses Script in PowerShell ausführen:
-#    .\obsidian-import.ps1
-# ============================================================
+
+# --- SSL FIX für Windows PowerShell 5.1 ---
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
 
 # --- KONFIGURATION ---
 $ApiKey    = Read-Host "Obsidian API Key eingeben"
-$VaultPath = "Claude Sessions"          # Ordner in deinem Vault
+$VaultPath = "Claude Sessions"
 $FileName  = "2026-04-17 Habit Tracker Session.md"
 $ApiBase   = "https://localhost:27123"
 
@@ -26,13 +22,9 @@ if (-not (Test-Path $MdFile)) {
 }
 
 $Content = Get-Content $MdFile -Raw -Encoding UTF8
+$Bytes   = [System.Text.Encoding]::UTF8.GetBytes($Content)
 
 # --- IN OBSIDIAN IMPORTIEREN ---
-$Headers = @{
-    "Authorization" = "Bearer $ApiKey"
-    "Content-Type"  = "text/markdown"
-}
-
 $NotePath = "$VaultPath/$FileName"
 $Url      = "$ApiBase/vault/$([Uri]::EscapeDataString($NotePath))"
 
@@ -41,23 +33,18 @@ Write-Host "Importiere nach Obsidian..." -ForegroundColor Cyan
 Write-Host "Ziel: $NotePath"
 
 try {
-    # SSL-Zertifikat ignorieren (selbstsigniert vom Plugin)
-    add-type @"
-        using System.Net;
-        using System.Security.Cryptography.X509Certificates;
-        public class TrustAll : ICertificatePolicy {
-            public bool CheckValidationResult(ServicePoint sp, X509Certificate cert,
-                WebRequest req, int problem) { return true; }
-        }
-"@
-    [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAll
+    $Request                = [System.Net.WebRequest]::Create($Url)
+    $Request.Method         = "PUT"
+    $Request.ContentType    = "text/markdown"
+    $Request.Headers["Authorization"] = "Bearer $ApiKey"
+    $Request.ContentLength  = $Bytes.Length
 
-    $Response = Invoke-RestMethod `
-        -Uri $Url `
-        -Method Put `
-        -Headers $Headers `
-        -Body ([System.Text.Encoding]::UTF8.GetBytes($Content)) `
-        -ErrorAction Stop
+    $Stream = $Request.GetRequestStream()
+    $Stream.Write($Bytes, 0, $Bytes.Length)
+    $Stream.Close()
+
+    $Response = $Request.GetResponse()
+    $Response.Close()
 
     Write-Host ""
     Write-Host "Erfolgreich importiert!" -ForegroundColor Green
