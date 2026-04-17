@@ -576,13 +576,16 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   position: fixed; inset: 0;
   background: var(--bg);
   z-index: 200;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 20px;
   padding-top: calc(20px + env(safe-area-inset-top));
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
-.onboarding-inner { max-width: 460px; width: 100%; }
+.onboarding-inner { max-width: 460px; width: 100%; margin: auto; }
 .onboarding-step { display: none; }
 .onboarding-step.active { display: block; animation: fadeIn 0.3s; }
 .onboarding-icon {
