@@ -8,10 +8,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Habit Tracker">
 <title>Habit Tracker — SimplovaStudio</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 <style>
 :root {
   --emerald: #06D6A0;
@@ -2027,12 +2029,8 @@ function init() {
     if (e.target.id === 'habitModal') closeHabitModal();
   });
 
-  // Register service worker (inline)
   if ('serviceWorker' in navigator) {
-    const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});`;
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    const url = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(url).catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 }
 
